@@ -10,5 +10,26 @@ export LD_LIBRARY_PATH=/usr/local/steam-utils/lib64/fakeudev
 export LD_PRELOAD=/usr/local/steam-utils/lib64/webfix/webfix.so
 export LIBGL_DRI3_DISABLE=1
 
-exec -a "$0" "$VIVALDI_PATH" --no-sandbox --no-zygote --in-process-gpu --test-type --v=0 "$@"
-
+exec -a "$0" "$VIVALDI_PATH" /
+	--password-store=basic  \
+	--use-gl=desktop \
+	--use-cmd-decoder=validating \
+	--disable-software-rasterizer \
+	--disable-font-subpixel-positioning \
+	--disable-gpu-driver-bug-workarounds \
+	--disable-gpu-driver-workarounds \
+	--disable-gpu-vsync \
+	--enable-accelerated-video-decode \
+	--enable-accelerated-mjpeg-decode \
+	--enable-features=VaapiVideoDecoder,VaapiVideoEncoder,CanvasOopRasterization \
+	--enable-gpu-compositing \
+	--enable-gpu-rasterization \
+	--enable-native-gpu-memory-buffers \
+	--enable-oop-rasterization \
+	--canvas-oop-rasterization \
+	--enable-raw-draw \
+	--use-vulkan \
+	--enable-zero-copy \
+	--ignore-gpu-blocklist \
+	--check-for-update-interval=604800 \
+	--no-sandbox --no-zygote --in-process-gpu --test-type --v=0 "$@"
