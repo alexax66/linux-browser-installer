@@ -106,6 +106,62 @@ install_apt_packages()
 	done
 }
 
+install_nvidia_driver()
+{
+# Configure additional repositories to install updates, backports, security patches.
+	chroot ${chroot_path} /bin/bash 'echo "deb http://archive.ubuntu.com/ubuntu/ focal-updates  main restricted universe multiverse" >> ${chroot_path}/etc/apt/sources.list'
+	chroot ${chroot_path} /bin/bash 'echo "deb http://archive.ubuntu.com/ubuntu/ focal-backports  main restricted universe multiverse" >> ${chroot_path}/etc/apt/sources.list'
+	chroot ${chroot_path} /bin/bash 'echo "deb http://archive.ubuntu.com/ubuntu/ focal-security  main restricted universe multiverse" >> ${chroot_path}/etc/apt/sources.list'
+
+# Update Ubuntu base system
+	chroot ${chroot_path} /bin/bash -c 'apt update'
+	chroot ${chroot_path} /bin/bash -c 'apt -y upgrade'
+
+# Setup 32-bit support. Now 32-bit based programs (e.g. steam) can access OpenGL, vulkan APIs.
+	chroot ${chroot_path} /bin/bash -c 'dpkg --add-architecture i386'
+	chroot ${chroot_path} /bin/bash -c 'apt update'
+	chroot ${chroot_path} /bin/bash -c 'apt -y upgrade'
+
+# Install the NVIDIA's libraries, binaries, and drivers but skip the kernel modules.
+	echo "Enter the NVIDIA DRIVER VERSION number, same as your FreeBSD, for example 470.103.01."
+	read NVIDIA_DRIVER_VERSION
+#	NVIDIA_DRIVER_VERSION="390.151"
+	echo "Now will be download NVIDIA-Linux-x86_64-${NVIDIA_DRIVER_VERSION}.run"
+
+	chroot ${chroot_path} /bin/bash -c 'mkdir -p ${chroot_path}/root/TMP'
+	chroot ${chroot_path} /bin/bash -c 'rm -rf ${chroot_path}/root/TMP/*'
+	chroot /compat/ubuntu /bin/bash -c 'export TMPDIR=${chroot_path}/root/TMP'
+
+	chroot ${chroot_path} /bin/bash -c 'cd ${chroot_path}/root'
+
+	chroot ${chroot_path} /bin/bash -c 'wget -q "https://us.download.nvidia.com/XFree86/Linux-x86_64/${NVIDIA_DRIVER_VERSION}/NVIDIA-Linux-x86_64-${NVIDIA_DRIVER_VERSION}.run"' || \
+		bail "Can't download NVIDIA-Linux-x86_64-${NVIDIA_DRIVER_VERSION}.run. Check NVIDIA DRIVER VERSION number"
+	chroot ${chroot_path} /bin/bash -c 'chmod +x NVIDIA-Linux-x86_64-${NVIDIA_DRIVER_VERSION}.run'
+
+	chroot ${chroot_path} /bin/bash -c './NVIDIA-Linux-x86_64-${NVIDIA_DRIVER_VERSION}.run \
+	--accept-license --skip-module-unload --silent \
+	--install-compat32-libs \
+	--no-nvidia-modprobe --no-backup --no-kernel-module \
+	--no-x-check --no-nouveau-check \
+	--no-cc-version-check --no-kernel-module-source \
+	--no-check-for-alternate-installs \
+	--no-unified-memory --no-drm \
+	--install-libglvnd'
+
+# Install some 64-bit, and 32-bit libraries and tools
+	chroot ${chroot_path} /bin/bash -c 'apt install -y vainfo vdpauinfo vulkan-tools mesa-utils'
+	chroot ${chroot_path} /bin/bash -c 'apt install -y libva2:i386 libvulkan1:i386 libvdpau1:i386'
+
+# Download and install vdpau-va-driver manually from a previous version of Ubuntu because it was removed from Ubuntu 20.x.
+# We need this for the vdpau backend for libva
+	chroot ${chroot_path} /bin/bash -c 'apt install -y gdebi'
+
+	chroot ${chroot_path} /bin/bash -c 'wget -q "http://archive.ubuntu.com/ubuntu/pool/universe/v/vdpau-video/vdpau-va-driver_0.7.4-6ubuntu1_amd64.deb"'
+	chroot ${chroot_path} /bin/bash -c 'gdebi vdpau-va-driver_0.7.4-6ubuntu1_amd64.deb'
+	chroot ${chroot_path} /bin/bash -c 'wget -q "http://archive.ubuntu.com/ubuntu/pool/universe/v/vdpau-video/vdpau-va-driver_0.7.4-6ubuntu1_i386.deb"'
+	chroot ${chroot_path} /bin/bash -c 'gdebi vdpau-va-driver_0.7.4-6ubuntu1_i386.deb'
+}
+
 build_scripts()
 {
 	for s in $(find bin chroot/bin rc.d -name "*.in"); do
@@ -303,6 +359,7 @@ install_chroot_base()
 	set_timezone
 	service ubuntu start
 	install_apt_packages
+	install_nvidia_driver
 	symlink_icons
 	symlink_themes
 }
@@ -429,4 +486,3 @@ while [ $# -gt 0 ]; do
 	esac
 	shift
 done
-
