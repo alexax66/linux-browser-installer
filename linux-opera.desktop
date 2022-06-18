@@ -2,7 +2,8 @@
 Type=Application
 Version=1.0
 Encoding=UTF-8
-Name=Fast and secure web browser (Linux)
+Name=Opera (Linux)
+Comment=Fast and secure web browser
 Icon=opera
 Exec=/usr/local/bin/opera
 Categories=Application;Network;WebBrowser;
