@@ -108,10 +108,19 @@ install_apt_packages()
 
 install_nvidia_driver()
 {
+	if [ -f ${chroot_path}/usr/lib/x86_64-linux-gnu/libGLESv2_nvidia.so.2 ]; then
+		echo "Nvidia driver already installed" >&2
+		return
+	fi
+
 # Configure additional repositories to install updates, backports, security patches.
-	chroot ${chroot_path} /bin/bash 'echo "deb http://archive.ubuntu.com/ubuntu/ focal-updates  main restricted universe multiverse" >> ${chroot_path}/etc/apt/sources.list'
-	chroot ${chroot_path} /bin/bash 'echo "deb http://archive.ubuntu.com/ubuntu/ focal-backports  main restricted universe multiverse" >> ${chroot_path}/etc/apt/sources.list'
-	chroot ${chroot_path} /bin/bash 'echo "deb http://archive.ubuntu.com/ubuntu/ focal-security  main restricted universe multiverse" >> ${chroot_path}/etc/apt/sources.list'
+	if grep -q 'deb http://archive.ubuntu.com/ubuntu/ focal-updates  main restricted universe multiverse' ${chroot_path}/etc/apt/sources.list; then
+		echo "Repositories already added"
+	else
+		chroot ${chroot_path} /bin/bash -c 'echo "deb http://archive.ubuntu.com/ubuntu/ focal-updates  main restricted universe multiverse" >> /etc/apt/sources.list'
+		chroot ${chroot_path} /bin/bash -c 'echo "deb http://archive.ubuntu.com/ubuntu/ focal-backports  main restricted universe multiverse" >> /etc/apt/sources.list'
+		chroot ${chroot_path} /bin/bash -c 'echo "deb http://archive.ubuntu.com/ubuntu/ focal-security  main restricted universe multiverse" >> /etc/apt/sources.list'
+	fi
 
 # Update Ubuntu base system
 	chroot ${chroot_path} /bin/bash -c 'apt update'
@@ -123,22 +132,23 @@ install_nvidia_driver()
 	chroot ${chroot_path} /bin/bash -c 'apt -y upgrade'
 
 # Install the NVIDIA's libraries, binaries, and drivers but skip the kernel modules.
+	echo""
 	echo "Enter the NVIDIA DRIVER VERSION number, same as your FreeBSD, for example 470.103.01."
 	read NVIDIA_DRIVER_VERSION
-#	NVIDIA_DRIVER_VERSION="390.151"
+
+	LINK="https://us.download.nvidia.com/XFree86/Linux-x86_64/${NVIDIA_DRIVER_VERSION}/NVIDIA-Linux-x86_64-${NVIDIA_DRIVER_VERSION}.run"
 	echo "Now will be download NVIDIA-Linux-x86_64-${NVIDIA_DRIVER_VERSION}.run"
+	echo "LINK: ${LINK}"
 
-	chroot ${chroot_path} /bin/bash -c 'mkdir -p ${chroot_path}/root/TMP'
-	chroot ${chroot_path} /bin/bash -c 'rm -rf ${chroot_path}/root/TMP/*'
-	chroot /compat/ubuntu /bin/bash -c 'export TMPDIR=${chroot_path}/root/TMP'
+	chroot ${chroot_path} /bin/bash -c \
+	"apt install -y wget" || \
+		bail "'apt install -y wget' failed"
 
-	chroot ${chroot_path} /bin/bash -c 'cd ${chroot_path}/root'
-
-	chroot ${chroot_path} /bin/bash -c 'wget -q "https://us.download.nvidia.com/XFree86/Linux-x86_64/${NVIDIA_DRIVER_VERSION}/NVIDIA-Linux-x86_64-${NVIDIA_DRIVER_VERSION}.run"' || \
+	chroot ${chroot_path} /bin/bash -c "wget $LINK" || \
 		bail "Can't download NVIDIA-Linux-x86_64-${NVIDIA_DRIVER_VERSION}.run. Check NVIDIA DRIVER VERSION number"
-	chroot ${chroot_path} /bin/bash -c 'chmod +x NVIDIA-Linux-x86_64-${NVIDIA_DRIVER_VERSION}.run'
+	chroot ${chroot_path} /bin/bash -c "chmod +x NVIDIA-Linux-x86_64-${NVIDIA_DRIVER_VERSION}.run"
 
-	chroot ${chroot_path} /bin/bash -c './NVIDIA-Linux-x86_64-${NVIDIA_DRIVER_VERSION}.run \
+	chroot ${chroot_path} /bin/bash -c "./NVIDIA-Linux-x86_64-${NVIDIA_DRIVER_VERSION}.run \
 	--accept-license --skip-module-unload --silent \
 	--install-compat32-libs \
 	--no-nvidia-modprobe --no-backup --no-kernel-module \
@@ -146,7 +156,7 @@ install_nvidia_driver()
 	--no-cc-version-check --no-kernel-module-source \
 	--no-check-for-alternate-installs \
 	--no-unified-memory --no-drm \
-	--install-libglvnd'
+	--install-libglvnd"
 
 # Install some 64-bit, and 32-bit libraries and tools
 	chroot ${chroot_path} /bin/bash -c 'apt install -y vainfo vdpauinfo vulkan-tools mesa-utils'
@@ -160,6 +170,19 @@ install_nvidia_driver()
 	chroot ${chroot_path} /bin/bash -c 'gdebi vdpau-va-driver_0.7.4-6ubuntu1_amd64.deb'
 	chroot ${chroot_path} /bin/bash -c 'wget -q "http://archive.ubuntu.com/ubuntu/pool/universe/v/vdpau-video/vdpau-va-driver_0.7.4-6ubuntu1_i386.deb"'
 	chroot ${chroot_path} /bin/bash -c 'gdebi vdpau-va-driver_0.7.4-6ubuntu1_i386.deb'
+
+# Delete files
+	chroot ${chroot_path} /bin/bash -c "rm -f *.deb"
+	chroot ${chroot_path} /bin/bash -c "rm -f *.run"
+}
+
+uninstall_nvidia_driver()
+{
+	if [ -f ${chroot_path}/usr/bin/nvidia-uninstall ]; then
+		chroot ${chroot_path} /bin/bash -c "nvidia-uninstall"
+	else
+		echo "Nvidia driver already uninstalled" >&2
+	fi
 }
 
 build_scripts()
@@ -355,11 +378,12 @@ install_chroot_base()
 	echo "deb http://archive.ubuntu.com/ubuntu/ ${ubuntu_version} " \
 	     "main restricted universe multiverse" > \
 		${chroot_path}/etc/apt/sources.list
-	fix_ld_path
+
 	set_timezone
 	service ubuntu start
 	install_apt_packages
 	install_nvidia_driver
+	fix_ld_path
 	symlink_icons
 	symlink_themes
 }
@@ -402,6 +426,7 @@ usage()
 	echo "Usage: $0 install <brave|chrome|edge|vivaldi>"
 	echo "       $0 deinstall <brave|chrome|edge|vivaldi>"
 	echo "       $0 chroot <create|upgrade|delete>"
+	echo "       $0 nvidia  <insatll|uninstall>"
 	echo "       $0 symlink <icons|themes>"
 	echo "       $0 clean"
 	exit 1
@@ -422,6 +447,7 @@ while [ $# -gt 0 ]; do
 			browser=$2
 			build_scripts
 			install_chroot_base
+			install_nvidia_driver
 			eval install_${browser}
 			;;
 		*)
@@ -452,6 +478,7 @@ while [ $# -gt 0 ]; do
 		create)
 			build_scripts
 			install_chroot_base
+			install_nvidia_driver
 			exit 0
 			;;
 		delete)
@@ -460,6 +487,22 @@ while [ $# -gt 0 ]; do
 			;;
 		upgrade)
 			upgrade_chroot
+			exit 0
+			;;
+		*)
+			usage
+			;;
+		esac
+		shift
+		;;
+	nvidia)
+		case $2 in
+		install)
+			install_nvidia_driver
+			exit 0
+			;;
+		uninstall)
+			uninstall_nvidia_driver
 			exit 0
 			;;
 		*)
