@@ -320,6 +320,38 @@ deinstall_edge()
 	rm -f "${chroot_bindir}/edge"
 }
 
+install_opera()
+{
+	if [ -x ${chroot_path}/usr/lib/x86_64-linux-gnu/opera]; then
+		echo "Opera already installed" >&2
+		exit 1
+	fi
+	chroot ${chroot_path} /bin/bash -c \
+		"apt install -y apt-transport-https curl" || \
+		bail "'apt install -y apt-transport-https curl' failed"
+	chroot ${chroot_path} /bin/bash -c \
+		'curl https://deb.opera.com/archive.key | apt-key --keyring /etc/apt/trusted.gpg.d/opera.gpg add -' || \
+		bail "'curl https://deb.opera.com/archive.key | apt-key --keyring /etc/apt/trusted.gpg.d/opera.gpg add -' failed"
+	chroot ${chroot_path} /bin/bash -c \
+		'echo "deb [arch=amd64] https://deb.opera.com/opera-stable/ stable non-free" > /etc/apt/sources.list.d/opera.list'
+	chroot ${chroot_path} /bin/bash -c "apt update"
+	chroot ${chroot_path} /bin/bash -c "apt install -y opera-stable" || \
+		bail "'apt install -y opera' failed"
+	[ -d "${chroot_path}/${prefix}/share/fonts" ] && \
+		rmdir "${chroot_path}/${prefix}/share/fonts"
+	install -m 555 chroot/bin/opera "${chroot_bindir}"
+	install -m 555 bin/linux-opera "${bindir}"
+	install -m 0644 linux-opera.desktop "${appsdir}"
+}
+
+deinstall_opera()
+{
+	chroot ${chroot_path} /bin/bash -c "apt remove -y opera"
+	rm -f "${appsdir}/linux-opera.desktop"
+	rm -f "${bindir}/linux-opera"
+	rm -f "${chroot_bindir}/opera"
+}
+
 symlink_icons()
 {
 	local name i
@@ -413,7 +445,7 @@ upgrade_chroot()
 
 cleanup()
 {
-	browsers="brave chrome edge vivaldi"
+	browsers="brave chrome edge opera vivaldi"
 	for b in ${browsers}; do
 		rm -f "bin/linux-$b"
 		rm -f "chroot/bin/$b"
@@ -423,8 +455,8 @@ cleanup()
 
 usage()
 {
-	echo "Usage: $0 install <brave|chrome|edge|vivaldi>"
-	echo "       $0 deinstall <brave|chrome|edge|vivaldi>"
+	echo "Usage: $0 install <brave|chrome|edge|opera|vivaldi>"
+	echo "       $0 deinstall <brave|chrome|edge|opera|vivaldi>"
 	echo "       $0 chroot <create|upgrade|delete>"
 	echo "       $0 nvidia  <insatll|uninstall>"
 	echo "       $0 symlink <icons|themes>"
@@ -443,7 +475,7 @@ while [ $# -gt 0 ]; do
 	case "$1" in
 	install)
 		case $2 in
-		brave|chrome|edge|vivaldi)
+		brave|chrome|edge|opera|vivaldi)
 			browser=$2
 			build_scripts
 			install_chroot_base
@@ -458,7 +490,7 @@ while [ $# -gt 0 ]; do
 		;;
 	deinstall)
 		case $2 in
-		brave|chrome|edge|vivaldi)
+		brave|chrome|edge|opera|vivaldi)
 			browser=$2
 			eval deinstall_${browser}
 			exit 0
