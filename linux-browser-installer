@@ -114,7 +114,7 @@ install_nvidia_driver()
 	fi
 
 # Configure additional repositories to install updates, backports, security patches.
-	if grep -q 'deb http://archive.ubuntu.com/ubuntu/ focal-updates  main restricted universe multiverse' ${chroot_path}/etc/apt/sources.list; then
+	if [ grep -q 'deb http://archive.ubuntu.com/ubuntu/ focal-updates  main restricted universe multiverse' ${chroot_path}/etc/apt/sources.list ]; then
 		echo "Repositories already added"
 	else
 		chroot ${chroot_path} /bin/bash -c 'echo "deb http://archive.ubuntu.com/ubuntu/ focal-updates  main restricted universe multiverse" >> /etc/apt/sources.list'
@@ -352,6 +352,38 @@ deinstall_opera()
 	rm -f "${chroot_bindir}/opera"
 }
 
+install_yandex()
+{
+	if [ -x ${chroot_path}/opt/yandex/browser/yandex_browser]; then
+		echo "Yandex browser already installed" >&2
+		exit 1
+	fi
+	chroot ${chroot_path} /bin/bash -c \
+		"apt install -y apt-transport-https curl" || \
+		bail "'apt install -y apt-transport-https curl' failed"
+	chroot ${chroot_path} /bin/bash -c \
+		'curl https://repo.yandex.ru/yandex-browser/YANDEX-BROWSER-KEY.GPG | apt-key --keyring /etc/apt/trusted.gpg.d/yandex.gpg add -' || \
+		bail "'https://repo.yandex.ru/yandex-browser/YANDEX-BROWSER-KEY.GPG | apt-key --keyring /etc/apt/trusted.gpg.d/yandex.gpg add -' failed"
+	chroot ${chroot_path} /bin/bash -c \
+		'echo "deb [arch=amd64] http://repo.yandex.ru/yandex-browser/deb beta main" > /etc/apt/sources.list.d/yandex-beta.list'
+	chroot ${chroot_path} /bin/bash -c "apt update"
+	chroot ${chroot_path} /bin/bash -c "apt install -y yandex-browser-beta" || \
+		bail "'apt install -y yandex-browser-beta' failed"
+	[ -d "${chroot_path}/${prefix}/share/fonts" ] && \
+		rmdir "${chroot_path}/${prefix}/share/fonts"
+	install -m 555 chroot/bin/yandex "${chroot_bindir}"
+	install -m 555 bin/linux-yandex "${bindir}"
+	install -m 0644 linux-yandex.desktop "${appsdir}"
+}
+
+deinstall_yandex()
+{
+	chroot ${chroot_path} /bin/bash -c "apt remove -y yandex-browser-beta"
+	rm -f "${appsdir}/linux-yandex.desktop"
+	rm -f "${bindir}/linux-yandex"
+	rm -f "${chroot_bindir}/yandex"
+}
+
 symlink_icons()
 {
 	local name i
@@ -445,7 +477,7 @@ upgrade_chroot()
 
 cleanup()
 {
-	browsers="brave chrome edge opera vivaldi"
+	browsers="brave chrome edge opera vivaldi yandex"
 	for b in ${browsers}; do
 		rm -f "bin/linux-$b"
 		rm -f "chroot/bin/$b"
@@ -455,8 +487,8 @@ cleanup()
 
 usage()
 {
-	echo "Usage: $0 install <brave|chrome|edge|opera|vivaldi>"
-	echo "       $0 deinstall <brave|chrome|edge|opera|vivaldi>"
+	echo "Usage: $0 install <brave|chrome|edge|opera|vivaldi|yandex>"
+	echo "       $0 deinstall <brave|chrome|edge|opera|vivaldi|yandex>"
 	echo "       $0 chroot <create|upgrade|delete>"
 	echo "       $0 nvidia  <insatll|uninstall>"
 	echo "       $0 symlink <icons|themes>"
@@ -475,7 +507,7 @@ while [ $# -gt 0 ]; do
 	case "$1" in
 	install)
 		case $2 in
-		brave|chrome|edge|opera|vivaldi)
+		brave|chrome|edge|opera|vivaldi|yandex)
 			browser=$2
 			build_scripts
 			install_chroot_base
@@ -490,7 +522,7 @@ while [ $# -gt 0 ]; do
 		;;
 	deinstall)
 		case $2 in
-		brave|chrome|edge|opera|vivaldi)
+		brave|chrome|edge|opera|vivaldi|yandex)
 			browser=$2
 			eval deinstall_${browser}
 			exit 0

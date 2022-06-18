@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Encoding=UTF-8
+Name=Yandex Browser [beta] (Linux)
+Comment=Fast and secure web browser based on the Chromium open source project.
+Icon=yandex-browser
+Exec=/home/alexax/app/linux-yandex
+Categories=Application;Network;WebBrowser;
+MimeType=text/html;text/xml;application/xhtml+xml;x-scheme-handler/http;x-scheme-handler/https;x-scheme-handler/ftp;
+StartupNotify=true
+

@@ -1,8 +1,8 @@
 ### About
 
 *linux-browser-installer* is a Bourne shell script to install Linux versions of
-the Brave, Chrome, Edge, Opera or Vivaldi browsers under FreeBSD into a Linux
-(Ubuntu Focal) chroot.
+the Brave, Chrome, Edge, Opera, Vivaldi or Yandex browsers under FreeBSD into a
+Linux (Ubuntu Focal) chroot.
 They allow you to use web services like *Netflix*, *Prime Video*, or *Spotify*
 which require [Widevine](https://en.wikipedia.org/wiki/Widevine).
 The script is based on the excellent [Howto](https://forums.freebsd.org/threads/linuxulator-how-to-run-google-chrome-linux-binary-on-freebsd.77559/) by @[patovm04](https://github.com/patovm04).
@@ -36,7 +36,7 @@ $ cd linux-browser-installer
 
 Proceed as user root with the following steps.
 
-#### Install Brave, Chrome, Edge, Opera or Vivaldi browser
+#### Install Brave, Chrome, Edge, Opera, Vivaldi or Yandex browser
 
 ````
 # ./linux-browser-installer install chrome
@@ -64,6 +64,12 @@ and/or
 
 ````
 # ./linux-browser-installer install opera
+````
+
+and/or
+
+````
+# ./linux-browser-installer install yandex
 ````
 
 If the chroot is not existing yet, it will be created first.
@@ -100,6 +106,10 @@ and/or
 
 ````
 # ./linux-browser-installer deinstall opera
+````
+
+````
+# ./linux-browser-installer deinstall yandex
 ````
 
 This command deinstalls the browser, and removes its wrapper
