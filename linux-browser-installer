@@ -122,13 +122,13 @@ install_nvidia_driver()
 	fi
 
 # Configure additional repositories to install updates, backports, security patches.
-	if [ grep -q 'deb http://archive.ubuntu.com/ubuntu/ focal-updates  main restricted universe multiverse' ${chroot_path}/etc/apt/sources.list ]; then
-		echo "Repositories already added"
-	else
-		chroot ${chroot_path} /bin/bash -c 'echo "deb http://archive.ubuntu.com/ubuntu/ focal-updates  main restricted universe multiverse" >> /etc/apt/sources.list'
-		chroot ${chroot_path} /bin/bash -c 'echo "deb http://archive.ubuntu.com/ubuntu/ focal-backports  main restricted universe multiverse" >> /etc/apt/sources.list'
-		chroot ${chroot_path} /bin/bash -c 'echo "deb http://archive.ubuntu.com/ubuntu/ focal-security  main restricted universe multiverse" >> /etc/apt/sources.list'
-	fi
+#	if [ grep -q 'deb http://archive.ubuntu.com/ubuntu/ focal-updates  main restricted universe multiverse' ${chroot_path}/etc/apt/sources.list ]; then
+#		echo "Repositories already added"
+#	else
+#		chroot ${chroot_path} /bin/bash -c 'echo "deb http://archive.ubuntu.com/ubuntu/ focal-updates  main restricted universe multiverse" >> /etc/apt/sources.list'
+#		chroot ${chroot_path} /bin/bash -c 'echo "deb http://archive.ubuntu.com/ubuntu/ focal-backports  main restricted universe multiverse" >> /etc/apt/sources.list'
+#		chroot ${chroot_path} /bin/bash -c 'echo "deb http://archive.ubuntu.com/ubuntu/ focal-security  main restricted universe multiverse" >> /etc/apt/sources.list'
+#	fi
 
 # Update Ubuntu base system
 	chroot ${chroot_path} /bin/bash -c 'apt update'
@@ -454,6 +454,9 @@ install_chroot_base()
 	     "main restricted universe multiverse" >> \
 		${chroot_path}/etc/apt/sources.list
 	echo "deb http://archive.ubuntu.com/ubuntu/ ${ubuntu_version}-security " \
+	     "main restricted universe multiverse" >> \
+		${chroot_path}/etc/apt/sources.list
+	echo "deb http://archive.ubuntu.com/ubuntu/ ${ubuntu_version}--backports " \
 	     "main restricted universe multiverse" >> \
 		${chroot_path}/etc/apt/sources.list
 
