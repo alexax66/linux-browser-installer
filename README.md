@@ -78,7 +78,7 @@ Run `/usr/local/bin/linux-chrome`, `/usr/local/bin/linux-brave`,
 `/usr/local/bin/linux-vivaldi`, or `/usr/local/bin/linux-edge`
 to start your installed browser.
 
-#### Deinstall Brave, Chrome, Edge or Vivaldi browser or Yandex browser
+#### Deinstall Brave, Chrome, Edge, Vivaldi or Yandex browser
 
 ````
 # ./linux-browser-installer deinstall chrome
