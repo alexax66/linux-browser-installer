@@ -108,6 +108,8 @@ and/or
 # ./linux-browser-installer deinstall opera
 ````
 
+and/or
+
 ````
 # ./linux-browser-installer deinstall yandex
 ````
