@@ -5,7 +5,7 @@ the Brave, Chrome, Edge, Opera, Vivaldi or Yandex browsers under FreeBSD into a
 Linux (Ubuntu Focal) chroot.
 They allow you to use web services like *Netflix*, *Prime Video*, or *Spotify*
 which require [Widevine](https://en.wikipedia.org/wiki/Widevine).
-The script is based on the excellent [Howto](https://forums.freebsd.org/threads/linuxulator-how-to-run-google-chrome-linux-binary-on-freebsd.77559/) by @[patovm04](https://github.com/patovm04).
+The script is based on the excellent [Howto](https://forums.freebsd.org/threads/linuxulator-how-to-run-google-chrome-linux-binary-on-freebsd.77559/) by @[patovm04](https://github.com/patovm04) and [Howto](https://gist.github.com/schrodyn/0e75bd527d457b32ddba5da022424a33) by @[schrodyn](https://github.com/schrodyn).
 
 If not defined otherwise, Ubuntu Focal (`$ubuntu_version`) is installed under
 `/compat/ubuntu` (`$chroot_path`). A modified version of FreeBSD's linux rc-script
